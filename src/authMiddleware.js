@@ -9,25 +9,29 @@ function decodeJWT(token) {
 }
 
 export async function handleAuth(request) {
-  const cookies = request.headers.get('Cookie');
-  if (!cookies) {
-    console.log('No cookies found');
-    return { isAuthenticated: false };
-  }
+  const cookies = request.headers.get('Cookie') || '';
+  const authHeader = request.headers.get('Authorization');
+  let token;
 
   const cfAuthCookie = cookies
     .split(';')
     .find(c => c.trim().startsWith('CF_Authorization='));
+  if (cfAuthCookie) {
+    token = cfAuthCookie.split('=')[1].trim();
+  }
 
-  if (!cfAuthCookie) {
-    console.log('No CF_Authorization cookie found');
+  // If no cookie is found, fall back to Authorization header
+  if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  }
+
+  if (!token) {
+    console.log('No token found');
     return { isAuthenticated: false };
   }
 
   try {
-    const token = cfAuthCookie.split('=')[1].trim();
     const decoded = decodeJWT(token);
-    
     console.log('Decoded token:', {
       email: decoded.email,
       exp: new Date(decoded.exp * 1000).toISOString()
