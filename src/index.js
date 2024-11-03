@@ -11,12 +11,12 @@
 import { handleAuth } from "./authMiddleware";
 
 const corsHeaders = {
-	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Origin": "https://images.lokesh.cloud",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type, Authorization, Cf-Access-Authenticated-User-Email",
 	"Access-Control-Allow-Credentials": "true",
 	"Access-Control-Max-Age": "86400",
-  };
+};
 
 export default {
 	async fetch(request, env) {
