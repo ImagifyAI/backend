@@ -13,33 +13,22 @@ function decodeJWT(token) {
 }
 
 export async function handleAuth(request) {
-  const authHeader = request.headers.get("Authorization");
-  console.log('Auth header present:', !!authHeader);
-  
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.log('Missing or invalid auth header');
-    return { isAuthenticated: false };
-  }
-
-  const token = authHeader.slice(7);
-  console.log('Token length:', token?.length);
-
   try {
-    const decodedToken = decodeJWT(token);
-    console.log('Decoded token:', {
-      sub: decodedToken.sub,
-      email: decodedToken.email,
-    });
-    
-    const userId = decodedToken.sub || decodedToken.email;
-    if (!userId) {
-      console.log('No userId found in token');
+    const cfAccessEmail = request.headers.get("Cf-Access-Authenticated-User-Email");
+    const cfAccessUserId = request.headers.get("Cf-Access-Authenticated-User-Id");
+
+    if (!cfAccessEmail || !cfAccessUserId) {
+      console.log('Missing Cloudflare Access headers');
       return { isAuthenticated: false };
     }
-    
-    return { isAuthenticated: true, userId };
+
+    return { 
+      isAuthenticated: true, 
+      userId: cfAccessUserId,
+      email: cfAccessEmail
+    };
   } catch (error) {
-    console.error("Failed to decode token:", error);
+    console.error("Auth error:", error);
     return { isAuthenticated: false };
   }
 }
