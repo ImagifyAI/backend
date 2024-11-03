@@ -24,9 +24,9 @@ export default {
 			case "/api/upload":
 				return handleUpload(request, env, authResult.userId);
 			case "/api/images":
-				return handleGetImages(request, authResult.userId);
+				return handleGetImages(request, env, authResult.userId);
 			case "/api/cart":
-				return handleCart(request, authResult.userId);
+				return handleCart(request, env, authResult.userId);
 			default:
 				return new Response("Not Found", { status: 404 });
 		}
@@ -64,8 +64,16 @@ async function handleUpload(request, env, userId) {
 	});
   }
 
-async function handleGetImages(request) {
-	return new Response("Get images endpoint", { status: 200 });
+async function handleGetImages(request, env, userId) {
+	const { results } = await env.MY_DB.prepare(
+		`SELECT id, filename, upload_date, tags FROM images WHERE user_id = ? ORDER BY upload_date DESC`
+	  )
+		.bind(userId)
+		.all();
+	
+	  return new Response(JSON.stringify({ success: true, images: results }), {
+		headers: { "Content-Type": "application/json" },
+	  });
 }
 
 async function handleCart(request) {
