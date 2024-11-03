@@ -33,7 +33,7 @@ export default {
 	}
 };
 
-async function handleUpload(request, env) {
+async function handleUpload(request, env, userId) {
 	if (request.method !== 'POST') {
 	  return new Response("Method not allowed", { status: 405 });
 	}
