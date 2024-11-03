@@ -33,8 +33,28 @@ export default {
 };
 
 async function handleUpload(request) {
-	return new Response("Upload endpoint", { status: 200 });
-}
+	if (request.method !== 'POST') {
+	  return new Response("Method not allowed", { status: 405 });
+	}
+  
+	const contentType = request.headers.get("Content-Type");
+	if (!contentType || !contentType.startsWith("image/")) {
+	  return new Response("Unsupported media type", { status: 415 });
+	}
+  
+	const image = await request.arrayBuffer();
+  
+	const uniqueFilename = `image_${Date.now()}.jpg`;
+  
+	const bucket = IMAGES_BUCKET; 
+	await bucket.put(uniqueFilename, image, {
+	  httpMetadata: { contentType },
+	});
+  
+	return new Response(JSON.stringify({ success: true, filename: uniqueFilename }), {
+	  headers: { "Content-Type": "application/json" },
+	});
+  }
 
 async function handleGetImages(request) {
 	return new Response("Get images endpoint", { status: 200 });
