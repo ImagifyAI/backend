@@ -14,17 +14,20 @@ import { handleAuth } from "./authMiddleware";
 export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
-
+		
 		const authResult = await handleAuth(request);
 		if (!authResult.isAuthenticated) {
 			return new Response("Unauthorized", { status: 401 });
 		}
-
+		
 		switch (url.pathname) {
 			case "/api/upload":
 				return handleUpload(request, env, authResult.userId);
 			case "/api/images":
 				return handleGetImages(request, env, authResult.userId);
+			case url.pathname.startsWith("/api/image/"):
+				const filename = url.pathname.split("/api/image/")[1];
+				return handleGetImage(filename, env);			
 			case "/api/cart":
 				return handleCart(request, env, authResult.userId);
 			default:
@@ -48,15 +51,14 @@ async function handleUpload(request, env, userId) {
 	const uniqueFilename = `${userId}_${timestamp}.jpg`;
 
 	const imageId = `${userId}_${timestamp}`;
-
 	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
 		httpMetadata: { contentType },
 	  });
  
 	await env.MY_DB.prepare(
-		`INSERT INTO images (id, user_id, filename, upload_date, tags) VALUES (?, ?, ?, ?, ?)`
+		`INSERT INTO images (id, user_id, filename, upload_date) VALUES (?, ?, ?, ?)`
 	  )
-	  	.bind(imageId, userId, uniqueFilename, new Date(timestamp).toISOString(), "")
+	  	.bind(imageId, userId, uniqueFilename, new Date(timestamp).toISOString())
 		.run();
 
 	return new Response(JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), {
@@ -66,7 +68,7 @@ async function handleUpload(request, env, userId) {
 
 async function handleGetImages(request, env, userId) {
 	const { results } = await env.MY_DB.prepare(
-		`SELECT id, filename, upload_date, tags FROM images WHERE user_id = ? ORDER BY upload_date DESC`
+		`SELECT id, filename, upload_date FROM images WHERE user_id = ? ORDER BY upload_date DESC`
 	  )
 		.bind(userId)
 		.all();
@@ -75,6 +77,19 @@ async function handleGetImages(request, env, userId) {
 		headers: { "Content-Type": "application/json" },
 	  });
 }
+
+async function handleGetImage(filename, env) {
+	const image = await env.IMAGES_BUCKET.get(filename);
+	if (!image) {
+	  return new Response("Image not found", { status: 404 });
+	}
+  
+	return new Response(image.body, {
+	  headers: {
+		"Content-Type": image.httpMetadata.contentType || "image/jpeg",
+	  },
+	});
+  }
 
 async function handleCart(request) {
 	return new Response("Cart endpoint", { status: 200 });
