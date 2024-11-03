@@ -9,6 +9,7 @@
  */
 
 import { handleAuth } from "./authMiddleware";
+import { v4 as uuidv4 } from "uuid";
 
 export default {
 	async fetch(request, env) {
@@ -21,11 +22,11 @@ export default {
 
 		switch (url.pathname) {
 			case "/api/upload":
-				return handleUpload(request, env);
+				return handleUpload(request, env, authResult.userId);
 			case "/api/images":
-				return handleGetImages(request);
+				return handleGetImages(request, authResult.userId);
 			case "/api/cart":
-				return handleCart(request);
+				return handleCart(request, authResult.userId);
 			default:
 				return new Response("Not Found", { status: 404 });
 		}
@@ -45,11 +46,19 @@ async function handleUpload(request, env) {
 	const image = await request.arrayBuffer();
   
 	const uniqueFilename = `image_${Date.now()}.jpg`;
-  
+
+	const imageId = uuidv4();
+
 	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
 		httpMetadata: { contentType },
 	  });
-  
+ 
+	await env.MY_DB.prepare(
+		`INSERT INTO images (id, user_id, filename, tags) VALUES (?, ?, ?, ?)`
+	  )
+		.bind(imageId, userId, uniqueFilename, "")
+		.run();
+
 	return new Response(JSON.stringify({ success: true, filename: uniqueFilename }), {
 	  headers: { "Content-Type": "application/json" },
 	});

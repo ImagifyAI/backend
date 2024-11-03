@@ -9,6 +9,10 @@ compatibility_flags = ["nodejs_compat"]
 binding = "IMAGES_BUCKET"
 bucket_name = "imagifyai-r2"
 
+[[d1_databases]]
+binding = "MY_DB"
+database_name = "imagifyai-d1"
+database_id = "8a32f137-08bb-461b-b0d2-db6c7e01f31a"
 
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
