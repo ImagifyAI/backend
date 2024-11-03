@@ -49,7 +49,13 @@ export default {
 			}
 
 			const authResult = await handleAuth(request);
+			console.log('Auth result:', {
+				isAuthenticated: authResult.isAuthenticated,
+				hasUserId: !!authResult.userId
+			});
+
 			if (!authResult.isAuthenticated) {
+				console.log('Authentication failed');
 				return new Response("Unauthorized", {
 					status: 401,
 					headers: corsHeaders
