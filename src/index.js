@@ -14,7 +14,18 @@ import { handleAuth } from "./authMiddleware";
 export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
-		
+
+		if (request.method === "OPTIONS") {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+					"Access-Control-Allow-Headers": "Content-Type, Authorization",
+				},
+			});
+		}		
+
 		const authResult = await handleAuth(request);
 		if (!authResult.isAuthenticated) {
 			return new Response("Unauthorized", { status: 401 });
@@ -38,13 +49,23 @@ export default {
 
 async function handleUpload(request, env, userId) {
 	if (request.method !== 'POST') {
-	  return new Response("Method not allowed", { status: 405 });
+	  return new Response("Method not allowed", { 
+	  	status: 405,
+	  	headers: {
+	  		"Access-Control-Allow-Origin": "*",
+	  	}
+	  });
 	}
   
 	const contentType = request.headers.get("Content-Type");
 	if (!contentType || !contentType.startsWith("image/")) {
-	  return new Response("Unsupported media type", { status: 415 });
-	}
+		return new Response("Unsupported media type", { 
+			status: 415,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+			}
+		});
+	  }
   
 	const image = await request.arrayBuffer();
 	const timestamp = Date.now();
@@ -62,7 +83,10 @@ async function handleUpload(request, env, userId) {
 		.run();
 
 	return new Response(JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), {
-	  headers: { "Content-Type": "application/json" },
+		headers: {
+			"Content-Type": "application/json",
+			"Access-Control-Allow-Origin": "*",
+		},
 	});
   }
 
