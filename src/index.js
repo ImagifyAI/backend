@@ -44,10 +44,10 @@ async function handleUpload(request, env, userId) {
 	}
   
 	const image = await request.arrayBuffer();
-  
-	const uniqueFilename = `${userId}_${Date.now()}.jpg`;
+	const timestamp = Date.now();
+	const uniqueFilename = `${userId}_${timestamp}.jpg`;
 
-	const imageId = `${userId}_${Date.now()}`;
+	const imageId = `${userId}_${timestamp}`;
 
 	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
 		httpMetadata: { contentType },
