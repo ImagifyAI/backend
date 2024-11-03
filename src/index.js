@@ -11,7 +11,7 @@
 import { handleAuth } from "./authMiddleware";
 
 export default {
-	async fetch(request) {
+	async fetch(request, env) {
 		const url = new URL(request.url);
 
 		const authResult = await handleAuth(request);
@@ -21,7 +21,7 @@ export default {
 
 		switch (url.pathname) {
 			case "/api/upload":
-				return handleUpload(request);
+				return handleUpload(request, env);
 			case "/api/images":
 				return handleGetImages(request);
 			case "/api/cart":
@@ -32,7 +32,7 @@ export default {
 	}
 };
 
-async function handleUpload(request) {
+async function handleUpload(request, env) {
 	if (request.method !== 'POST') {
 	  return new Response("Method not allowed", { status: 405 });
 	}
@@ -46,10 +46,9 @@ async function handleUpload(request) {
   
 	const uniqueFilename = `image_${Date.now()}.jpg`;
   
-	const bucket = IMAGES_BUCKET; 
-	await bucket.put(uniqueFilename, image, {
-	  httpMetadata: { contentType },
-	});
+	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
+		httpMetadata: { contentType },
+	  });
   
 	return new Response(JSON.stringify({ success: true, filename: uniqueFilename }), {
 	  headers: { "Content-Type": "application/json" },
