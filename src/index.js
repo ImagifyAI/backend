@@ -10,25 +10,33 @@
 
 import { handleAuth } from "./authMiddleware";
 
+const corsHeaders = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  
+function createResponse(body, status = 200, extraHeaders = {}) {
+  return new Response(body, {
+    status,
+    headers: {
+      ...corsHeaders,
+      ...extraHeaders
+    },
+  });
+}
 
 export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
 
 		if (request.method === "OPTIONS") {
-			return new Response(null, {
-				status: 204,
-				headers: {
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-					"Access-Control-Allow-Headers": "Content-Type, Authorization",
-				},
-			});
+			return createResponse(null, 204);
 		}		
 
 		const authResult = await handleAuth(request);
 		if (!authResult.isAuthenticated) {
-			return new Response("Unauthorized", { status: 401 });
+			return createResponse("Unauthorized", 401);
 		}
 		
 		switch (url.pathname) {
@@ -42,29 +50,19 @@ export default {
 			case "/api/cart":
 				return handleCart(request, env, authResult.userId);
 			default:
-				return new Response("Not Found", { status: 404 });
+				return createResponse("Not Found", 404);
 		}
 	}
 };
 
 async function handleUpload(request, env, userId) {
 	if (request.method !== 'POST') {
-	  return new Response("Method not allowed", { 
-	  	status: 405,
-	  	headers: {
-	  		"Access-Control-Allow-Origin": "*",
-	  	}
-	  });
+		return createResponse("Method not allowed", 405);
 	}
   
 	const contentType = request.headers.get("Content-Type");
 	if (!contentType || !contentType.startsWith("image/")) {
-		return new Response("Unsupported media type", { 
-			status: 415,
-			headers: {
-				"Access-Control-Allow-Origin": "*",
-			}
-		});
+		return createResponse("Unsupported media type", 415);
 	  }
   
 	const image = await request.arrayBuffer();
@@ -82,13 +80,12 @@ async function handleUpload(request, env, userId) {
 	  	.bind(imageId, userId, uniqueFilename, new Date(timestamp).toISOString())
 		.run();
 
-	return new Response(JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), {
-		headers: {
-			"Content-Type": "application/json",
-			"Access-Control-Allow-Origin": "*",
-		},
-	});
-  }
+	return createResponse(
+		JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), 
+		200, 
+		{ "Content-Type": "application/json" }
+		);
+	}
 
 async function handleGetImages(request, env, userId) {
 	const { results } = await env.MY_DB.prepare(
@@ -97,24 +94,26 @@ async function handleGetImages(request, env, userId) {
 		.bind(userId)
 		.all();
 	
-	  return new Response(JSON.stringify({ success: true, images: results }), {
-		headers: { "Content-Type": "application/json" },
-	  });
-}
+	return createResponse(
+		JSON.stringify({ success: true, images: results }), 
+		200, 
+		{ "Content-Type": "application/json" }
+		);
+	}
 
 async function handleGetImage(filename, env) {
 	const image = await env.IMAGES_BUCKET.get(filename);
 	if (!image) {
-	  return new Response("Image not found", { status: 404 });
+	  return createResponse("Image not found", 404);
 	}
   
-	return new Response(image.body, {
-	  headers: {
-		"Content-Type": image.httpMetadata.contentType || "image/jpeg",
-	  },
-	});
-  }
+	return createResponse(
+		image.body, 
+		200, 
+		{ "Content-Type": image.httpMetadata.contentType || "image/jpeg" }
+	  );
+	}
 
 async function handleCart(request) {
-	return new Response("Cart endpoint", { status: 200 });
+	return createResponse("Cart endpoint", 200);
 }
