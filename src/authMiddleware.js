@@ -1,4 +1,8 @@
-import jwt_decode from "jwt-decode";
+function decodeJWT(token) {
+  const payload = token.split(".")[1];
+  const decodedPayload = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+  return JSON.parse(decodedPayload);
+}
 
 export async function handleAuth(request) {
     const authHeader = request.headers.get("Authorization");
@@ -9,7 +13,7 @@ export async function handleAuth(request) {
     const token = authHeader.slice(7);
   
     try {
-      const decodedToken = jwt_decode(token);
+      const decodedToken = decodeJWT(token);
       const userId = decodedToken.sub || decodedToken.email; 
       return { isAuthenticated: true, userId };
     } catch (error) {

@@ -9,7 +9,7 @@
  */
 
 import { handleAuth } from "./authMiddleware";
-import { v4 as uuidv4 } from "uuid";
+
 
 export default {
 	async fetch(request, env) {
@@ -45,21 +45,21 @@ async function handleUpload(request, env) {
   
 	const image = await request.arrayBuffer();
   
-	const uniqueFilename = `image_${Date.now()}.jpg`;
+	const uniqueFilename = `${userId}_${Date.now()}.jpg`;
 
-	const imageId = uuidv4();
+	const imageId = `${userId}_${Date.now()}`;
 
 	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
 		httpMetadata: { contentType },
 	  });
  
 	await env.MY_DB.prepare(
-		`INSERT INTO images (id, user_id, filename, tags) VALUES (?, ?, ?, ?)`
+		`INSERT INTO images (id, user_id, filename, upload_date, tags) VALUES (?, ?, ?, ?, ?)`
 	  )
-		.bind(imageId, userId, uniqueFilename, "")
+	  	.bind(imageId, userId, uniqueFilename, new Date(timestamp).toISOString(), "")
 		.run();
 
-	return new Response(JSON.stringify({ success: true, filename: uniqueFilename }), {
+	return new Response(JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), {
 	  headers: { "Content-Type": "application/json" },
 	});
   }
