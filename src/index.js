@@ -20,7 +20,13 @@ function setCORSHeaders(response) {
     headers.set("Access-Control-Allow-Origin", "https://images.lokesh.cloud");
     headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    return new Response(response.body, { ...response, headers });
+    headers.set("Access-Control-Allow-Credentials", "true");
+
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: headers,
+    });
 }
 
 function handleOptions(request) {
