@@ -66,8 +66,13 @@ export default {
                     }
                 }
                 break;
+
             default:
-                response = new Response("Not Found", { status: 404 });
+                if (url.pathname.startsWith("/api/images/")) {
+                    response = await handleGetImage(request, env); 
+                } else {
+                    response = new Response("Not Found", { status: 404 });
+                }
                 break;
         }
 

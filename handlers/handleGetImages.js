@@ -1,17 +1,22 @@
-export default async function handleGetImages(request, env, userId) {
-    try {
-        const { results } = await env.MY_DB.prepare(
-            `SELECT id, filename, upload_date, tags FROM images WHERE user_id = ? ORDER BY upload_date DESC`
-        ).bind(userId).all();
+async function handleGetImage(request, env) {
+    const url = new URL(request.url);
+    const filename = url.pathname.split("/").pop();
 
-        return new Response(JSON.stringify({ success: true, images: results }), {
-            headers: { "Content-Type": "application/json" },
+    try {
+        const object = await env.IMAGES_BUCKET.get(filename);
+
+        if (!object) {
+            return new Response("Image not found", { status: 404 });
+        }
+
+        return new Response(object.body, {
+            headers: {
+                "Content-Type": object.httpMetadata.contentType || "application/octet-stream",
+                "Cache-Control": "public, max-age=31536000", 
+            },
         });
     } catch (error) {
-        console.error("Error fetching images:", error);
-        return new Response(JSON.stringify({ success: false, error: "Failed to fetch images" }), {
-            headers: { "Content-Type": "application/json" },
-            status: 500,
-        });
+        console.error("Error fetching image:", error);
+        return new Response("Failed to fetch image", { status: 500 });
     }
 }
