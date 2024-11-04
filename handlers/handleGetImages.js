@@ -1,3 +1,13 @@
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
 export default async function handleGetImages(request, env, userId) {
     try {
         const { results } = await env.MY_DB.prepare(
@@ -13,7 +23,7 @@ export default async function handleGetImages(request, env, userId) {
             }
 
             const arrayBuffer = await object.arrayBuffer();
-            const base64Image = Buffer.from(arrayBuffer).toString("base64");
+            const base64Image = arrayBufferToBase64(arrayBuffer); 
             const dataUri = `data:${object.httpMetadata.contentType || "image/jpeg"};base64,${base64Image}`;
 
             return { ...image, data: dataUri }; 
