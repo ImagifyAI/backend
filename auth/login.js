@@ -34,4 +34,3 @@ export default async function handleLogin(request, env) {
 		headers: { "Content-Type": "application/json" },
 	});
 }
-

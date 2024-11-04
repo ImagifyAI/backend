@@ -12,7 +12,7 @@ export default async function handleRegister(request, env) {
 
 	const { encoded: hashedPassword } = await argon2.hash({
 		pass: password,
-		salt: crypto.getRandomValues(new Uint8Array(16)), 
+		salt: crypto.getRandomValues(new Uint8Array(16)),  
 		type: argon2.ArgonType.Argon2id,
 		hashLen: 32,
 		time: 2,
