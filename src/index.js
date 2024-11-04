@@ -15,31 +15,62 @@ import handleUpload from "../handlers/handleUpload.js";
 import handleGetImages from "../handlers/handleGetImages.js";
 import handleCart from "../handlers/handleCart.js";
 
-export default {
-	async fetch(request, env) {
-		const url = new URL(request.url);
+function setCORSHeaders(response) {
+    const headers = new Headers(response.headers);
+    headers.set("Access-Control-Allow-Origin", "https://images.lokesh.cloud");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    return new Response(response.body, { ...response, headers });
+}
 
-		switch (url.pathname) {
-			case "/api/register":
-				return handleRegister(request, env);
-			case "/api/login":
-				return handleLogin(request, env);
-			case "/api/upload":
-			case "/api/images":
-			case "/api/cart":
-				const authResult = await handleAuth(request, env);
-				if (!authResult.isAuthenticated) {
-					return new Response("Unauthorized", { status: 401 });
-				}
-				if (url.pathname === "/api/upload") {
-					return handleUpload(request, env, authResult.userId);
-				} else if (url.pathname === "/api/images") {
-					return handleGetImages(request, env, authResult.userId);
-				} else {
-					return handleCart(request, env, authResult.userId);
-				}
-			default:
-				return new Response("Not Found", { status: 404 });
-		}
-	}
+function handleOptions(request) {
+    const headers = new Headers();
+    headers.set("Access-Control-Allow-Origin", "https://images.lokesh.cloud");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    headers.set("Access-Control-Max-Age", "86400"); 
+
+    return new Response(null, { headers });
+}
+
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
+
+        if (request.method === "OPTIONS") {
+            return handleOptions(request);
+        }
+
+        let response;
+
+        switch (url.pathname) {
+            case "/api/register":
+                response = await handleRegister(request, env);
+                break;
+            case "/api/login":
+                response = await handleLogin(request, env);
+                break;
+            case "/api/upload":
+            case "/api/images":
+            case "/api/cart":
+                const authResult = await handleAuth(request, env);
+                if (!authResult.isAuthenticated) {
+                    response = new Response("Unauthorized", { status: 401 });
+                } else {
+                    if (url.pathname === "/api/upload") {
+                        response = await handleUpload(request, env, authResult.userId);
+                    } else if (url.pathname === "/api/images") {
+                        response = await handleGetImages(request, env, authResult.userId);
+                    } else {
+                        response = await handleCart(request, env, authResult.userId);
+                    }
+                }
+                break;
+            default:
+                response = new Response("Not Found", { status: 404 });
+                break;
+        }
+
+        return setCORSHeaders(response || new Response("Not Found", { status: 404 }));
+    }
 };
