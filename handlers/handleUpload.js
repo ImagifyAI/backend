@@ -1,4 +1,5 @@
 import { handleTagging } from "../handlers/handleTagging";
+
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
@@ -8,20 +9,20 @@ export default async function handleUpload(request, env) {
 
     try {
         const contentType = request.headers.get("content-type") || "";
-        console.log("Content-Type:", contentType); 
+        console.log("Content-Type:", contentType);  
 
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
 
             for (let [key, value] of formData.entries()) {
-                console.log(`Received form data key: ${key}, value: ${value}`);
+                console.log(`Received form data key: ${key}, value:`, value);
             }
 
-            userId = formData.get("userId"); 
-            imageData = formData.get("image");
+            userId = formData.get("userId");  
+            imageData = formData.get("image");  
 
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10);  
+                userId = parseInt(userId, 10); 
             }
 
             if (!imageData) {
@@ -33,7 +34,7 @@ export default async function handleUpload(request, env) {
             imageData = jsonData.imageData;
         }
 
-        console.log("Parsed userId:", userId);
+        console.log("Parsed userId:", userId);  
 
         if (!userId) {
             throw new Error("User ID is missing");
@@ -43,7 +44,6 @@ export default async function handleUpload(request, env) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
     }
-
 
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
@@ -71,4 +71,15 @@ export default async function handleUpload(request, env) {
         console.error("Image upload error:", error);
         return new Response("Image upload failed", { status: 500 });
     }
+}
+
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 1024;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
 }
