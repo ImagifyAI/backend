@@ -1,3 +1,5 @@
+import { handleTagging } from "../handlers/handleTagging";
+
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
