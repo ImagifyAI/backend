@@ -9,7 +9,7 @@ export default async function handleUpload(request, env) {
 
     try {
         const contentType = request.headers.get("content-type") || "";
-        console.log("Content-Type:", contentType);
+        console.log("Content-Type:", contentType);  
 
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
@@ -18,11 +18,11 @@ export default async function handleUpload(request, env) {
                 console.log(`Received form data key: ${key}, value:`, value);
             }
 
-            userId = formData.get("userId");
-            imageData = formData.get("image");
+            userId = formData.get("userId");  
+            imageData = formData.get("image");  
 
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10);
+                userId = parseInt(userId, 10); 
             }
 
             if (!imageData) {
@@ -34,7 +34,7 @@ export default async function handleUpload(request, env) {
             imageData = jsonData.imageData;
         }
 
-        console.log("Parsed userId:", userId);
+        console.log("Parsed userId:", userId);  
 
         if (!userId) {
             throw new Error("User ID is missing");
@@ -49,14 +49,15 @@ export default async function handleUpload(request, env) {
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
-        if (imageData instanceof File) {
-            const base64Image = await arrayBufferToBase64(imageData);
-
-            const tags = await handleTagging(base64Image, env);
-            console.log("Generated tags:", tags);
+        if (imageData instanceof File || imageData instanceof Blob) {
+            const arrayBuffer = await imageData.arrayBuffer(); 
+            const base64Image = arrayBufferToBase64(arrayBuffer);
 
             await env.IMAGES_BUCKET.put(filename, imageData);
             console.log("Image stored in bucket with filename:", filename);
+
+            const tags = await handleTagging(base64Image, env);  
+            console.log("Generated tags:", tags);
 
             await env.MY_DB.prepare(
                 `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
@@ -77,14 +78,13 @@ export default async function handleUpload(request, env) {
     }
 }
 
-function arrayBufferToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64data = reader.result.split(',')[1]; 
-            resolve(base64data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 1024;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
 }
