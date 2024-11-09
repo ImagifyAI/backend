@@ -44,7 +44,7 @@ export default async function handleUpload(request, env) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
     }
-
+    const id = `${userId}_${timestamp}`;
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
 
@@ -59,8 +59,8 @@ export default async function handleUpload(request, env) {
         console.log("Generated tags:", tags);
 
         await env.MY_DB.prepare(
-            `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
-        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
+            `INSERT INTO images (id, user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?, ?)`
+        ).bind(id, userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
         
         console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
 
