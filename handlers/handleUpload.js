@@ -1,5 +1,3 @@
-import { handleTagging } from "../handlers/handleTagging";
-
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
@@ -9,24 +7,21 @@ export default async function handleUpload(request, env) {
 
     try {
         const contentType = request.headers.get("content-type") || "";
-        console.log("Content-Type:", contentType);  
+        console.log("Content-Type:", contentType);
 
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
+            console.log("Received form data keys:", Array.from(formData.keys()));
 
-            for (let [key, value] of formData.entries()) {
-                console.log(`Received form data key: ${key}, value:`, value);
-            }
-
-            userId = formData.get("userId");  
-            imageData = formData.get("image");  
+            userId = formData.get("userId");
+            imageData = formData.get("image");
 
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10); 
+                userId = parseInt(userId, 10);
             }
 
-            if (!imageData) {
-                throw new Error("Image data missing in the request");
+            if (!imageData || !(imageData instanceof File)) {
+                throw new Error("Image data missing or invalid in the request");
             }
         } else {
             const jsonData = await request.json();
@@ -34,7 +29,7 @@ export default async function handleUpload(request, env) {
             imageData = jsonData.imageData;
         }
 
-        console.log("Parsed userId:", userId);  
+        console.log("Parsed userId:", userId);
 
         if (!userId) {
             throw new Error("User ID is missing");
@@ -49,42 +44,27 @@ export default async function handleUpload(request, env) {
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
-        if (imageData instanceof File || imageData instanceof Blob) {
-            const arrayBuffer = await imageData.arrayBuffer(); 
-            const base64Image = arrayBufferToBase64(arrayBuffer);
-
-            await env.IMAGES_BUCKET.put(filename, imageData);
-            console.log("Image stored in bucket with filename:", filename);
-
-            const tags = await handleTagging(base64Image, env);  
-            console.log("Generated tags:", tags);
-
-            await env.MY_DB.prepare(
-                `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
-            ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
-            
-            console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
-
-            return new Response(JSON.stringify({ success: true, filename, tags }), {
-                headers: { "Content-Type": "application/json" },
-            });
-        } else {
+        if (!(imageData instanceof File)) {
             throw new Error("Image data is not a valid File object.");
         }
 
+        await env.IMAGES_BUCKET.put(filename, imageData);
+        console.log("Image stored in bucket with filename:", filename);
+
+        const tags = await handleTagging(imageData, env);
+        console.log("Generated tags:", tags);
+
+        await env.MY_DB.prepare(
+            `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
+        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
+
+        console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
+
+        return new Response(JSON.stringify({ success: true, filename, tags }), {
+            headers: { "Content-Type": "application/json" },
+        });
     } catch (error) {
         console.error("Image upload error:", error);
         return new Response("Image upload failed", { status: 500 });
     }
-}
-
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 1024;
-
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
 }
