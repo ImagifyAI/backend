@@ -1,3 +1,7 @@
+
+import { verifyJWT } from "../utils/jwt.js";
+
+
 export async function handleAuth(request, env) {
     const authHeader = request.headers.get("Authorization");
     console.log("Auth Header:", authHeader);  
