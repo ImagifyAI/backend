@@ -2,8 +2,11 @@ export async function handleTagging(imageData, env) {
     const modelId = '@cf/unum/uform-gen2-qwen-500m';
 
     try {
+        const buffer = await imageData.arrayBuffer();
+        const imageBlob = new Blob([buffer], { type: 'image/jpeg' });
+
         const response = await env.AI.run(modelId, {
-            image: imageData,
+            image: imageBlob, 
             stream: false
         });
 
