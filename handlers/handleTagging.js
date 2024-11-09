@@ -2,28 +2,22 @@ export async function handleTagging(imageData, env) {
     const modelId = '@cf/unum/uform-gen2-qwen-500m';
 
     try {
-        if (!(imageData instanceof File)) {
-            throw new Error("Image data is not a valid File object.");
+        if (!(imageData instanceof Blob)) {
+            const arrayBuffer = await imageData.arrayBuffer();
+            imageData = new Blob([arrayBuffer], { type: 'image/jpeg' });
+            console.log("Converted imageData to Blob:", imageData);
         }
 
-        const arrayBuffer = await imageData.arrayBuffer();
-        console.log("Image data size:", arrayBuffer.byteLength, "bytes");
-
-        const imageBlob = new Blob([arrayBuffer], { type: 'image/jpeg' });
-
-        console.log("Blob size:", imageBlob.size, "bytes");
-
         const response = await env.AI.run(modelId, {
-            image: imageBlob,  
+            image: imageData, 
             stream: false
         });
 
         if (!response || response.error) {
-            throw new Error("Failed to generate tags from Workers AI: " + response?.error?.message || 'Unknown error');
+            throw new Error("Failed to generate tags from Workers AI");
         }
 
         const tags = response.caption ? response.caption.split(' ') : [];
-        console.log("Generated tags:", tags);
         return tags;
     } catch (error) {
         console.error("AI Tagging Error:", error);
