@@ -14,7 +14,7 @@ import handleLogin from "../auth/login.js";
 import handleUpload from "../handlers/handleUpload.js";
 import handleGetImages from "../handlers/handleGetImages.js";
 import handleCart from "../handlers/handleCart.js";
-import handleSearch from "../handlers/handleSearch.js"; 
+import handleSearch from "../handlers/handleSearch.js";
 
 function setCORSHeaders(response) {
     const headers = new Headers(response.headers);
@@ -60,7 +60,7 @@ export default {
             case "/api/upload":
             case "/api/images":
             case "/api/cart":
-            case "/api/search": 
+            case "/api/search":
                 const authResult = await handleAuth(request, env);
                 if (!authResult.isAuthenticated) {
                     response = new Response("Unauthorized", { status: 401 });
@@ -69,7 +69,7 @@ export default {
                         response = await handleUpload(request, env, authResult.userId);
                     } else if (url.pathname === "/api/images") {
                         response = await handleGetImages(request, env, authResult.userId);
-                    } else if (url.pathname === "/api/search") { 
+                    } else if (url.pathname === "/api/search") {
                         response = await handleSearch(request, env, authResult.userId);
                     } else {
                         response = await handleCart(request, env, authResult.userId);
