@@ -51,41 +51,41 @@ export default {
 
         let response;
 
-        switch (url.pathname) {
-            case "/api/register":
-                response = await handleRegister(request, env);
-                break;
-            case "/api/login":
-                response = await handleLogin(request, env);
-                break;
-            case "/api/upload":
-            case "/api/images":
-            case "/api/cart":
-            case "/api/search":
-                const authResult = await handleAuth(request, env);
-                if (!authResult.isAuthenticated) {
-                    response = new Response("Unauthorized", { status: 401 });
-                } else {
-                    if (url.pathname === "/api/upload") {
-                        response = await handleUpload(request, env, authResult.userId);
-                    } else if (url.pathname === "/api/images") {
-                        response = await handleGetImages(request, env, authResult.userId);
-                    } else if (url.pathname === "/api/search") {
-                        response = await handleSearch(request, env, authResult.userId);
+        try {
+            switch (url.pathname) {
+                case "/api/register":
+                    response = await handleRegister(request, env);
+                    break;
+                case "/api/login":
+                    response = await handleLogin(request, env);
+                    break;
+                case "/api/upload":
+                case "/api/images":
+                case "/api/cart":
+                case "/api/search":
+                    const authResult = await handleAuth(request, env);
+                    if (!authResult.isAuthenticated) {
+                        response = new Response("Unauthorized", { status: 401 });
                     } else {
-                        response = await handleCart(request, env, authResult.userId);
+                        if (url.pathname === "/api/upload") {
+                            response = await handleUpload(request, env, authResult.userId);
+                        } else if (url.pathname === "/api/images") {
+                            response = await handleGetImages(request, env, authResult.userId);
+                        } else if (url.pathname === "/api/search") {
+                            response = await handleSearch(request, env, authResult.userId);
+                        } else {
+                            response = await handleCart(request, env, authResult.userId);
+                        }
                     }
-                }
-                break;
-            default:
-                if (url.pathname.startsWith("/api/images/")) {
-                    response = await handleGetImage(request, env);
-                } else {
+                    break;
+                default:
                     response = new Response("Not Found", { status: 404 });
-                }
-                break;
+            }
+        } catch (error) {
+            console.error("Unhandled error:", error);
+            response = new Response("Internal Server Error", { status: 500 });
         }
 
-        return setCORSHeaders(response || new Response("Not Found", { status: 404 }));
+        return setCORSHeaders(response);
     }
 };
