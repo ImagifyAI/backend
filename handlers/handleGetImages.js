@@ -16,13 +16,21 @@ export default async function handleGetImages(request, env, userId) {
             `SELECT id, filename, upload_date, tags FROM images WHERE user_id = ? ORDER BY upload_date DESC`
         ).bind(userId).all();
 
+        if (!results) {
+            console.error("No results found for the given user ID:", userId);
+            return setCORSHeaders(new Response(JSON.stringify({ success: false, error: "No images found for the user" }), {
+                headers: { "Content-Type": "application/json" },
+                status: 404,
+            }));
+        }
+
         console.log("Database query results:", results);
 
         const imagesWithData = await Promise.all(results.map(async (image) => {
             const object = await env.IMAGES_BUCKET.get(image.filename);
 
             if (!object) {
-                console.error(`Image not found in R2: ${image.filename}`);
+                console.error(`Image not found in R2 for filename: ${image.filename}`);
                 return { ...image, data: null };
             }
 
@@ -40,8 +48,8 @@ export default async function handleGetImages(request, env, userId) {
         }));
     } catch (error) {
         console.error("Error fetching images:", error.message);
-        console.error("Stack trace:", error.stack);
-        return setCORSHeaders(new Response(JSON.stringify({ success: false, error: "Failed to fetch images" }), {
+        console.error("Detailed stack trace:", error.stack);
+        return setCORSHeaders(new Response(JSON.stringify({ success: false, error: error.message }), {
             headers: { "Content-Type": "application/json" },
             status: 500,
         }));
