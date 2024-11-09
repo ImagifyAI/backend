@@ -10,7 +10,7 @@ export async function handleTagging(imageData, env) {
                 image: [...byteArray],  
                 stream: false
             });
-
+            console.log("AI Model Full Response:", response);
             if (!response || response.error) {
                 throw new Error("Failed to generate tags from Workers AI");
             }
