@@ -6,24 +6,23 @@ export default async function handleUpload(request, env) {
     }
 
     let userId, imageData;
-    
+
     try {
         const contentType = request.headers.get("content-type") || "";
-        
+
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
-            userId = formData.get("userId");
+            userId = formData.get("userId");  
             imageData = formData.get("imageData");  
-            
+
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10);
+                userId = parseInt(userId, 10); 
             }
-            
+
             if (!imageData) {
                 throw new Error("Image data missing in the request");
             }
         } else {
-            // Fallback to JSON if it's not multipart
             const jsonData = await request.json();
             userId = jsonData.userId;
             imageData = jsonData.imageData;
