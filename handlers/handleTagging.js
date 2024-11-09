@@ -1,5 +1,5 @@
 export async function handleTagging(imageData, env) {
-    const modelId = '@cf/uform-gen2-qwen-500m';
+    const modelId = '@cf/unum/uform-gen2-qwen-500m';
 
     try {
         const response = await env.AI.run(modelId, {
