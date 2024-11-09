@@ -18,10 +18,10 @@ export default async function handleGetImages(request, env, userId) {
 
         if (!results) {
             console.error("No results found for the given user ID:", userId);
-            return setCORSHeaders(new Response(JSON.stringify({ success: false, error: "No images found for the user" }), {
+            return new Response(JSON.stringify({ success: false, error: "No images found for the user" }), {
                 headers: { "Content-Type": "application/json" },
                 status: 404,
-            }));
+            });
         }
 
         console.log("Database query results:", results);
@@ -43,15 +43,15 @@ export default async function handleGetImages(request, env, userId) {
 
         console.log("Images with data prepared for response");
 
-        return setCORSHeaders(new Response(JSON.stringify({ success: true, images: imagesWithData }), {
+        return new Response(JSON.stringify({ success: true, images: imagesWithData }), {
             headers: { "Content-Type": "application/json" },
-        }));
+        });
     } catch (error) {
         console.error("Error fetching images:", error.message);
         console.error("Detailed stack trace:", error.stack);
-        return setCORSHeaders(new Response(JSON.stringify({ success: false, error: error.message }), {
+        return new Response(JSON.stringify({ success: false, error: error.message }), {
             headers: { "Content-Type": "application/json" },
             status: 500,
-        }));
+        });
     }
 }
