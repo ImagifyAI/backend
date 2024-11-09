@@ -3,10 +3,13 @@ export async function handleTagging(imageData, env) {
 
     try {
         const buffer = await imageData.arrayBuffer();
+
+        console.log("Image data size:", buffer.byteLength, "bytes");
+
         const imageBlob = new Blob([buffer], { type: 'image/jpeg' });
 
         const response = await env.AI.run(modelId, {
-            image: imageBlob, 
+            image: imageBlob,  
             stream: false
         });
 
