@@ -7,16 +7,15 @@ export async function handleTagging(imageData, env) {
             const base64Image = `data:image/jpeg;base64,${Buffer.from(buffer).toString('base64')}`;
 
             const response = await env.AI.run(modelId, {
-                image: base64Image, 
+                image: [base64Image],  
                 stream: false
             });
 
-            // Error handling for the response
             if (!response || response.error) {
                 throw new Error("Failed to generate tags from Workers AI");
             }
 
-            const tags = response.caption ? response.caption.split(' ') : [];
+            const tags = response.labels ? response.labels.map(label => label.name) : [];
             return tags;
         } else {
             throw new Error("Provided image data is not a valid File or Blob");
