@@ -2,7 +2,7 @@ import { handleTagging } from "../handlers/handleTagging";
 
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
-        return setCORSHeaders(new Response("Method not allowed", { status: 405 }));
+        return new Response("Method not allowed", { status: 405 });
     }
 
     let userId, imageData;
@@ -13,7 +13,7 @@ export default async function handleUpload(request, env) {
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
             userId = formData.get("userId");   
-            imageData = formData.get("image"); 
+            imageData = formData.get("image");
 
             if (typeof userId === "string") {
                 userId = parseInt(userId, 10);  
@@ -29,26 +29,29 @@ export default async function handleUpload(request, env) {
         }
     } catch (error) {
         console.error("Error parsing upload request:", error);
-        return setCORSHeaders(new Response("Invalid upload request", { status: 400 }));
+        return new Response("Invalid upload request", { status: 400 });
     }
 
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
+        const arrayBuffer = await imageData.arrayBuffer(); 
+        const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
         await env.IMAGES_BUCKET.put(filename, imageData);
 
-        const tags = await handleTagging(imageData, env);
+        const tags = await handleTagging(base64Image, env); 
 
         await env.MY_DB.prepare(
             `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
-        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();        
+        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
 
-        return setCORSHeaders(new Response(JSON.stringify({ success: true, filename, tags }), {
+        return new Response(JSON.stringify({ success: true, filename, tags }), {
             headers: { "Content-Type": "application/json" },
-        }));
+        });
     } catch (error) {
         console.error("Image upload error:", error);
-        return setCORSHeaders(new Response("Image upload failed", { status: 500 }));
+        return new Response("Image upload failed", { status: 500 });
     }
 }
