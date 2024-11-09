@@ -17,11 +17,11 @@ export default async function handleUpload(request, env) {
                 console.log(`Received form data key: ${key}, value: ${value}`);
             }
 
-            userId = formData.get("userId");
+            userId = formData.get("userId"); 
             imageData = formData.get("image");
 
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10);
+                userId = parseInt(userId, 10);  
             }
 
             if (!imageData) {
