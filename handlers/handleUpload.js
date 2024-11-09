@@ -44,30 +44,34 @@ export default async function handleUpload(request, env) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
     }
-    
+
     const timestamp = Date.now();
-    const id = `${userId}_${timestamp}`;
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
-        const arrayBuffer = await imageData.arrayBuffer(); 
-        const base64Image = arrayBufferToBase64(arrayBuffer);
+        if (imageData instanceof File) {
+            const arrayBuffer = await imageData.arrayBuffer(); 
+            const base64Image = arrayBufferToBase64(arrayBuffer);
 
-        await env.IMAGES_BUCKET.put(filename, imageData);
-        console.log("Image stored in bucket with filename:", filename);
+            await env.IMAGES_BUCKET.put(filename, imageData);
+            console.log("Image stored in bucket with filename:", filename);
 
-        const tags = await handleTagging(base64Image, env);  
-        console.log("Generated tags:", tags);
+            const tags = await handleTagging(base64Image, env);  
+            console.log("Generated tags:", tags);
 
-        await env.MY_DB.prepare(
-            `INSERT INTO images (id, user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?, ?)`
-        ).bind(id, userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
-        
-        console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
+            await env.MY_DB.prepare(
+                `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
+            ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
+            
+            console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
 
-        return new Response(JSON.stringify({ success: true, filename, tags }), {
-            headers: { "Content-Type": "application/json" },
-        });
+            return new Response(JSON.stringify({ success: true, filename, tags }), {
+                headers: { "Content-Type": "application/json" },
+            });
+        } else {
+            throw new Error("Image data is not a valid File object.");
+        }
+
     } catch (error) {
         console.error("Image upload error:", error);
         return new Response("Image upload failed", { status: 500 });
