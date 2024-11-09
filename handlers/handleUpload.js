@@ -44,6 +44,7 @@ export default async function handleUpload(request, env) {
 
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
+    const id = `${userId}_${timestamp}`;
 
     try {
         if (!(imageData instanceof File)) {
@@ -57,8 +58,8 @@ export default async function handleUpload(request, env) {
         console.log("Generated tags:", tags);
 
         await env.MY_DB.prepare(
-            `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
-        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
+            `INSERT INTO images (id, user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
+        ).bind(id, userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
 
         console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
 
