@@ -47,3 +47,20 @@ export async function verifyJWT(token, secret) {
 
     return decodedPayload;
 }
+
+async function importKey(secret) {
+    return crypto.subtle.importKey(
+        "raw",
+        encoder.encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign", "verify"]
+    );
+}
+
+function parseExpiry(expiry) {
+    const timeMap = { s: 1000, m: 60000, h: 3600000 };
+    const unit = expiry.slice(-1);
+    const time = parseInt(expiry.slice(0, -1));
+    return time * timeMap[unit];
+}
