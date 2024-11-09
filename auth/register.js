@@ -9,6 +9,8 @@ export default async function handleRegister(request, env) {
     if (!turnstileResponse) {
         return new Response(JSON.stringify({ success: false, error: "Turnstile token missing" }), { status: 400 });
     }
+    console.log("Turnstile token:", turnstileResponse);
+    console.log("TURNSTILE_SECRET:", env.TURNSTILE_SECRET);
 
     const turnstileVerifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         method: 'POST',
