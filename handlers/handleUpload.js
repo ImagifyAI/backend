@@ -12,11 +12,11 @@ export default async function handleUpload(request, env) {
 
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
-            userId = formData.get("userId");  
-            imageData = formData.get("imageData");  
+            userId = formData.get("userId");   
+            imageData = formData.get("image"); 
 
             if (typeof userId === "string") {
-                userId = parseInt(userId, 10); 
+                userId = parseInt(userId, 10);  
             }
 
             if (!imageData) {
