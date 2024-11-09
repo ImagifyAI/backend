@@ -4,9 +4,7 @@ export async function handleTagging(imageData, env) {
     try {
         if (imageData instanceof File || imageData instanceof Blob) {
             const buffer = await imageData.arrayBuffer();
-            const imageBlob = new Blob([buffer], { type: 'image/jpeg' });
-
-            const base64Image = await toBase64(imageBlob);
+            const base64Image = Buffer.from(buffer).toString('base64');
 
             const response = await env.AI.run(modelId, {
                 image: base64Image,  
@@ -26,13 +24,4 @@ export async function handleTagging(imageData, env) {
         console.error("AI Tagging Error:", error);
         return [];
     }
-}
-
-function toBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
 }
