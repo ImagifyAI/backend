@@ -36,12 +36,12 @@ export default async function handleUpload(request, env) {
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
-        const arrayBuffer = await imageData.arrayBuffer(); 
-        const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const arrayBuffer = await imageData.arrayBuffer();
+        const base64Image = arrayBufferToBase64(arrayBuffer);
 
         await env.IMAGES_BUCKET.put(filename, imageData);
 
-        const tags = await handleTagging(base64Image, env); 
+        const tags = await handleTagging(base64Image, env);
 
         await env.MY_DB.prepare(
             `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
@@ -54,4 +54,15 @@ export default async function handleUpload(request, env) {
         console.error("Image upload error:", error);
         return new Response("Image upload failed", { status: 500 });
     }
+}
+
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 1024;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
 }
