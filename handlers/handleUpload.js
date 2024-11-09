@@ -1,28 +1,28 @@
-export default async function handleUpload(request, env, userId) {
-	if (request.method !== 'POST') {
-		return new Response("Method not allowed", { status: 405 });
-	}
+import { handleTagging } from "../utils/aiTagging";
 
-	const contentType = request.headers.get("Content-Type");
-	if (!contentType || !contentType.startsWith("image/")) {
-		return new Response("Unsupported media type", { status: 415 });
-	}
+export default async function handleUpload(request, env) {
+    if (request.method !== 'POST') {
+        return new Response("Method not allowed", { status: 405 });
+    }
 
-	const image = await request.arrayBuffer();
-	const timestamp = Date.now();
-	const uniqueFilename = `${userId}_${timestamp}.jpg`;
-	const imageId = `${userId}_${timestamp}`;
+    const { userId, imageData } = await request.json();
+    const timestamp = Date.now();
+    const filename = `${userId}_${timestamp}.jpg`;
 
-	await env.IMAGES_BUCKET.put(uniqueFilename, image, {
-		httpMetadata: { contentType },
-	});
+    try {
+        await env.IMAGES_BUCKET.put(filename, imageData);
 
-	await env.MY_DB.prepare(
-		`INSERT INTO images (id, user_id, filename, upload_date, tags) VALUES (?, ?, ?, ?, ?)`
-	).bind(imageId, userId, uniqueFilename, new Date(timestamp).toISOString(), "")
-	.run();
+        const tags = await handleTagging(imageData, env);
 
-	return new Response(JSON.stringify({ success: true, filename: uniqueFilename, id: imageId }), {
-		headers: { "Content-Type": "application/json" },
-	});
+        await env.MY_DB.prepare(
+            `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
+        ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp)).run();
+
+        return new Response(JSON.stringify({ success: true, filename, tags }), {
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error("Image upload error:", error);
+        return new Response("Image upload failed", { status: 500 });
+    }
 }

@@ -14,6 +14,9 @@ binding = "MY_DB"
 database_name = "imagifyai-d1"
 database_id = "8a32f137-08bb-461b-b0d2-db6c7e01f31a"
 
+[ai]
+binding = "AI"
+
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 # Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
