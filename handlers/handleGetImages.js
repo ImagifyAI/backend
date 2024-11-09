@@ -29,14 +29,14 @@ export default async function handleGetImages(request, env, userId) {
             return { ...image, data: dataUri }; 
         }));
 
-        return new Response(JSON.stringify({ success: true, images: imagesWithData }), {
+        return setCORSHeaders(new Response(JSON.stringify({ success: true, images: imagesWithData }), {
             headers: { "Content-Type": "application/json" },
-        });
+        }));
     } catch (error) {
         console.error("Error fetching images:", error);
-        return new Response(JSON.stringify({ success: false, error: "Failed to fetch images" }), {
+        return setCORSHeaders(new Response(JSON.stringify({ success: false, error: "Failed to fetch images" }), {
             headers: { "Content-Type": "application/json" },
             status: 500,
-        });
+        }));
     }
 }
