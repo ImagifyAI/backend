@@ -1,4 +1,4 @@
-import { handleTagging } from "../utils/aiTagging";
+import { handleTagging } from "../handlers/handleTagging";
 
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
