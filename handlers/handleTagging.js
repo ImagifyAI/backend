@@ -34,5 +34,5 @@ function arrayBufferToBase64(buffer) {
     for (let i = 0; i < bytes.length; i++) {
         binary += String.fromCharCode(bytes[i]);
     }
-    return window.btoa(binary);  
+    return Buffer.from(binary, 'binary').toString('base64');
 }
