@@ -4,10 +4,10 @@ export async function handleTagging(imageData, env) {
     try {
         if (imageData instanceof File || imageData instanceof Blob) {
             const buffer = await imageData.arrayBuffer();
-            const imageBlob = new Blob([buffer], { type: 'image/jpeg' });
+            const imageBlob = new Blob([buffer], { type: 'image/jpeg' });  
 
             const response = await env.AI.run(modelId, {
-                image: imageBlob, 
+                image: imageBlob,  
                 stream: false
             });
 
