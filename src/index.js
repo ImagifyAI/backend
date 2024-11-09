@@ -67,12 +67,24 @@ export default {
                     if (!authResult.isAuthenticated) {
                         response = new Response("Unauthorized", { status: 401 });
                     } else {
+                        let requestData = {};
+                        if (request.method === "POST") {
+                            const contentType = request.headers.get("content-type") || "";
+
+                            if (contentType.includes("application/json")) {
+                                requestData = await request.json();
+                            } else if (contentType.includes("multipart/form-data")) {
+                                const formData = await request.formData();
+                                requestData = Object.fromEntries(formData.entries());
+                            }
+                        }
+
                         if (url.pathname === "/api/upload") {
                             response = await handleUpload(request, env, authResult.userId);
                         } else if (url.pathname === "/api/images") {
                             response = await handleGetImages(request, env, authResult.userId);
                         } else if (url.pathname === "/api/search") {
-                            response = await handleSearch(request, env, authResult.userId);
+                            response = await handleSearch(request, env, authResult.userId, requestData.query);
                         } else {
                             response = await handleCart(request, env, authResult.userId);
                         }
