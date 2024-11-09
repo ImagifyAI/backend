@@ -19,6 +19,11 @@ export async function signJWT(payload, secret, expiresIn = '1h') {
 
 export async function verifyJWT(token, secret) {
     const [header, payload, signature] = token.split('.');
+    if (!header || !payload || !signature) {
+        console.error("Invalid token structure");
+        return null;
+    }
+
     const unsignedToken = `${header}.${payload}`;
     const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
 
@@ -29,20 +34,16 @@ export async function verifyJWT(token, secret) {
         encoder.encode(unsignedToken)
     );
 
-    if (!valid) return null;
+    if (!valid) {
+        console.error("Signature verification failed");
+        return null;
+    }
+
     const decodedPayload = JSON.parse(atob(payload));
-    if (decodedPayload.exp && Date.now() > decodedPayload.exp) return null;
+    if (decodedPayload.exp && Date.now() > decodedPayload.exp) {
+        console.error("Token has expired");
+        return null;
+    }
 
     return decodedPayload;
-}
-
-async function importKey(secret) {
-    return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
-}
-
-function parseExpiry(expiry) {
-    const timeMap = { s: 1000, m: 60000, h: 3600000 };
-    const unit = expiry.slice(-1);
-    const time = parseInt(expiry.slice(0, -1));
-    return time * timeMap[unit];
 }
