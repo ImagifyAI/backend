@@ -12,6 +12,11 @@ export default async function handleUpload(request, env) {
 
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
+            
+            for (let [key, value] of formData.entries()) {
+                console.log(`Received key: ${key}, value: ${value}`);
+            }
+
             userId = formData.get("userId");   
             imageData = formData.get("image");
 
@@ -66,13 +71,3 @@ export default async function handleUpload(request, env) {
     }
 }
 
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 1024;
-
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-}
