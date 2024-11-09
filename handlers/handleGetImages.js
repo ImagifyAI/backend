@@ -10,9 +10,13 @@ function arrayBufferToBase64(buffer) {
 
 export default async function handleGetImages(request, env, userId) {
     try {
+        console.log("Fetching images for userId:", userId);
+
         const { results } = await env.MY_DB.prepare(
             `SELECT id, filename, upload_date, tags FROM images WHERE user_id = ? ORDER BY upload_date DESC`
         ).bind(userId).all();
+
+        console.log("Database query results:", results);
 
         const imagesWithData = await Promise.all(results.map(async (image) => {
             const object = await env.IMAGES_BUCKET.get(image.filename);
@@ -29,11 +33,14 @@ export default async function handleGetImages(request, env, userId) {
             return { ...image, data: dataUri }; 
         }));
 
+        console.log("Images with data prepared for response");
+
         return setCORSHeaders(new Response(JSON.stringify({ success: true, images: imagesWithData }), {
             headers: { "Content-Type": "application/json" },
         }));
     } catch (error) {
-        console.error("Error fetching images:", error);
+        console.error("Error fetching images:", error.message);
+        console.error("Stack trace:", error.stack);
         return setCORSHeaders(new Response(JSON.stringify({ success: false, error: "Failed to fetch images" }), {
             headers: { "Content-Type": "application/json" },
             status: 500,
