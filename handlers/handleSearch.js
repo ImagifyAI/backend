@@ -1,12 +1,21 @@
-export default async function handleSearch(request, env, userId) {
+export default async function handleSearch(request, env) {
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
     }
 
+    let userId;
     const { query } = await request.json();
 
-    if (!userId || !query) {
-        return new Response("Invalid input parameters", { status: 400 });
+    if (request.headers.get("content-type").includes("multipart/form-data")) {
+        const formData = await request.formData();
+        userId = formData.get("userId");
+    } else {
+        const jsonData = await request.json();
+        userId = jsonData.userId;
+    }
+
+    if (!userId) {
+        return new Response("User ID missing", { status: 400 });
     }
 
     try {
@@ -23,7 +32,6 @@ export default async function handleSearch(request, env, userId) {
         });
     } catch (error) {
         console.error("Search error:", error.message);
-        console.error("Stack trace:", error.stack);
         return new Response("Search failed due to internal error", { status: 500 });
     }
 }
