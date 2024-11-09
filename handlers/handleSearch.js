@@ -18,7 +18,8 @@ export default async function handleSearch(request, env) {
             headers: { "Content-Type": "application/json" },
         }));
     } catch (error) {
-        console.error("Search error:", error);
-        return setCORSHeaders(new Response("Search failed", { status: 500 }));
+        console.error("Search error:", error.message);
+        console.error("Stack trace:", error.stack);
+        return setCORSHeaders(new Response("Search failed due to internal error", { status: 500 }));
     }
 }
