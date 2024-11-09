@@ -2,7 +2,7 @@ import { handleTagging } from "../handlers/handleTagging";
 
 export default async function handleUpload(request, env) {
     if (request.method !== 'POST') {
-        return new Response("Method not allowed", { status: 405 });
+        return setCORSHeaders(new Response("Method not allowed", { status: 405 }));
     }
 
     const { userId, imageData } = await request.json();
@@ -18,11 +18,11 @@ export default async function handleUpload(request, env) {
             `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
         ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp)).run();
 
-        return new Response(JSON.stringify({ success: true, filename, tags }), {
+        return setCORSHeaders(new Response(JSON.stringify({ success: true, filename, tags }), {
             headers: { "Content-Type": "application/json" },
-        });
+        }));
     } catch (error) {
         console.error("Image upload error:", error);
-        return new Response("Image upload failed", { status: 500 });
+        return setCORSHeaders(new Response("Image upload failed", { status: 500 }));
     }
 }
