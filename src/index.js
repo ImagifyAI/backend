@@ -35,6 +35,7 @@ function handleOptions(request) {
     headers.set("Access-Control-Allow-Origin", "https://images.lokesh.cloud");
     headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    headers.set("Access-Control-Allow-Credentials", "true");
     headers.set("Access-Control-Max-Age", "86400");
 
     return new Response(null, { headers });
