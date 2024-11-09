@@ -52,6 +52,17 @@ export default {
         let response;
 
         try {
+            let requestData = {};
+            if (url.pathname === "/api/search" && request.method === "POST") {
+                const contentType = request.headers.get("content-type") || "";
+                if (contentType.includes("application/json")) {
+                    requestData = await request.json();
+                } else if (contentType.includes("multipart/form-data")) {
+                    const formData = await request.formData();
+                    requestData = Object.fromEntries(formData.entries());
+                }
+            }
+
             switch (url.pathname) {
                 case "/api/register":
                     response = await handleRegister(request, env);
@@ -60,34 +71,35 @@ export default {
                     response = await handleLogin(request, env);
                     break;
                 case "/api/upload":
-                case "/api/images":
-                case "/api/cart":
-                case "/api/search":
-                    const authResult = await handleAuth(request, env);
-                    if (!authResult.isAuthenticated) {
+                    const authResultUpload = await handleAuth(request, env);
+                    if (!authResultUpload.isAuthenticated) {
                         response = new Response("Unauthorized", { status: 401 });
                     } else {
-                        let requestData = {};
-                        if (request.method === "POST") {
-                            const contentType = request.headers.get("content-type") || "";
-
-                            if (contentType.includes("application/json")) {
-                                requestData = await request.json();
-                            } else if (contentType.includes("multipart/form-data")) {
-                                const formData = await request.formData();
-                                requestData = Object.fromEntries(formData.entries());
-                            }
-                        }
-
-                        if (url.pathname === "/api/upload") {
-                            response = await handleUpload(request, env, authResult.userId);
-                        } else if (url.pathname === "/api/images") {
-                            response = await handleGetImages(request, env, authResult.userId);
-                        } else if (url.pathname === "/api/search") {
-                            response = await handleSearch(request, env, authResult.userId, requestData.query);
-                        } else {
-                            response = await handleCart(request, env, authResult.userId);
-                        }
+                        response = await handleUpload(request, env, authResultUpload.userId);
+                    }
+                    break;
+                case "/api/images":
+                    const authResultImages = await handleAuth(request, env);
+                    if (!authResultImages.isAuthenticated) {
+                        response = new Response("Unauthorized", { status: 401 });
+                    } else {
+                        response = await handleGetImages(request, env, authResultImages.userId);
+                    }
+                    break;
+                case "/api/search":
+                    const authResultSearch = await handleAuth(request, env);
+                    if (!authResultSearch.isAuthenticated) {
+                        response = new Response("Unauthorized", { status: 401 });
+                    } else {
+                        response = await handleSearch(request, env, authResultSearch.userId, requestData.query);
+                    }
+                    break;
+                case "/api/cart":
+                    const authResultCart = await handleAuth(request, env);
+                    if (!authResultCart.isAuthenticated) {
+                        response = new Response("Unauthorized", { status: 401 });
+                    } else {
+                        response = await handleCart(request, env, authResultCart.userId);
                     }
                     break;
                 default:
