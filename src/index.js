@@ -14,6 +14,7 @@ import handleLogin from "../auth/login.js";
 import handleUpload from "../handlers/handleUpload.js";
 import handleGetImages from "../handlers/handleGetImages.js";
 import handleCart from "../handlers/handleCart.js";
+import handleSearch from "../handlers/handleSearch.js"; 
 
 function setCORSHeaders(response) {
     const headers = new Headers(response.headers);
@@ -34,7 +35,7 @@ function handleOptions(request) {
     headers.set("Access-Control-Allow-Origin", "https://images.lokesh.cloud");
     headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    headers.set("Access-Control-Max-Age", "86400"); 
+    headers.set("Access-Control-Max-Age", "86400");
 
     return new Response(null, { headers });
 }
@@ -59,6 +60,7 @@ export default {
             case "/api/upload":
             case "/api/images":
             case "/api/cart":
+            case "/api/search": 
                 const authResult = await handleAuth(request, env);
                 if (!authResult.isAuthenticated) {
                     response = new Response("Unauthorized", { status: 401 });
@@ -67,15 +69,16 @@ export default {
                         response = await handleUpload(request, env, authResult.userId);
                     } else if (url.pathname === "/api/images") {
                         response = await handleGetImages(request, env, authResult.userId);
+                    } else if (url.pathname === "/api/search") { 
+                        response = await handleSearch(request, env, authResult.userId);
                     } else {
                         response = await handleCart(request, env, authResult.userId);
                     }
                 }
                 break;
-
             default:
                 if (url.pathname.startsWith("/api/images/")) {
-                    response = await handleGetImage(request, env); 
+                    response = await handleGetImage(request, env);
                 } else {
                     response = new Response("Not Found", { status: 404 });
                 }
