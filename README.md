@@ -106,5 +106,6 @@ npm start
 ```
 
 ### To Do
+- **Use Cloudflare Turnstile to enhance security & privacy by detecting and blocking bot traffic**
 - **Use Cloudflare Images to implement image processing feature, allowing users to select multiple images for conversion to different formats**
 - **Use Cloudflare Durable Objects for storing image processing session data, enabling users to resume processing sessions across devices**
