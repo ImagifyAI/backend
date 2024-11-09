@@ -27,6 +27,12 @@ export default async function handleUpload(request, env) {
             userId = jsonData.userId;
             imageData = jsonData.imageData;
         }
+
+        console.log("Parsed userId:", userId); 
+        if (!userId) {
+            throw new Error("User ID is missing");
+        }
+
     } catch (error) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
@@ -36,16 +42,20 @@ export default async function handleUpload(request, env) {
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
-        const arrayBuffer = await imageData.arrayBuffer();
+        const arrayBuffer = await imageData.arrayBuffer(); 
         const base64Image = arrayBufferToBase64(arrayBuffer);
 
         await env.IMAGES_BUCKET.put(filename, imageData);
+        console.log("Image stored in bucket with filename:", filename);
 
-        const tags = await handleTagging(base64Image, env);
+        const tags = await handleTagging(base64Image, env);  
+        console.log("Generated tags:", tags);
 
         await env.MY_DB.prepare(
             `INSERT INTO images (user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
         ).bind(userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
+        
+        console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);
 
         return new Response(JSON.stringify({ success: true, filename, tags }), {
             headers: { "Content-Type": "application/json" },
