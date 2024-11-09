@@ -17,7 +17,7 @@ export default async function handleUpload(request, env) {
                 console.log(`Received form data key: ${key}, value: ${value}`);
             }
 
-            userId = formData.get("userId");  
+            userId = formData.get("userId");
             imageData = formData.get("image");
 
             if (typeof userId === "string") {
@@ -33,7 +33,8 @@ export default async function handleUpload(request, env) {
             imageData = jsonData.imageData;
         }
 
-        console.log("Parsed userId:", userId); 
+        console.log("Parsed userId:", userId);
+
         if (!userId) {
             throw new Error("User ID is missing");
         }
@@ -42,6 +43,7 @@ export default async function handleUpload(request, env) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
     }
+
 
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
