@@ -44,8 +44,9 @@ export default async function handleUpload(request, env) {
         console.error("Error parsing upload request:", error);
         return new Response("Invalid upload request", { status: 400 });
     }
-    const id = `${userId}_${timestamp}`;
+    
     const timestamp = Date.now();
+    const id = `${userId}_${timestamp}`;
     const filename = `${userId}_${timestamp}.jpg`;
 
     try {
