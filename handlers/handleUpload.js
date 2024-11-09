@@ -58,7 +58,7 @@ export default async function handleUpload(request, env) {
         console.log("Generated tags:", tags);
 
         await env.MY_DB.prepare(
-            `INSERT INTO images (id, user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?)`
+            `INSERT INTO images (id, user_id, filename, tags, upload_date) VALUES (?, ?, ?, ?, ?)`
         ).bind(id, userId, filename, JSON.stringify(tags), new Date(timestamp).toISOString()).run();
 
         console.log("Database entry created with userId:", userId, "filename:", filename, "tags:", tags);

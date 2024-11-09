@@ -6,10 +6,10 @@ export async function handleTagging(imageData, env) {
             const buffer = await imageData.arrayBuffer();
             console.log("Image data size:", buffer.byteLength, "bytes");
 
-            const base64Image = arrayBufferToBase64(buffer);
+            const imageBlob = new Blob([buffer], { type: 'image/jpeg' });
 
             const response = await env.AI.run(modelId, {
-                image: base64Image,  
+                image: imageBlob, 
                 stream: false
             });
 
@@ -26,13 +26,4 @@ export async function handleTagging(imageData, env) {
         console.error("AI Tagging Error:", error);
         return [];
     }
-}
-
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return Buffer.from(binary, 'binary').toString('base64');
 }
