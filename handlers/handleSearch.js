@@ -1,21 +1,10 @@
-export default async function handleSearch(request, env) {
+export default async function handleSearch(request, env, userId, query) {
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
     }
 
-    let userId;
-    const { query } = await request.json();
-
-    if (request.headers.get("content-type").includes("multipart/form-data")) {
-        const formData = await request.formData();
-        userId = formData.get("userId");
-    } else {
-        const jsonData = await request.json();
-        userId = jsonData.userId;
-    }
-
-    if (!userId) {
-        return new Response("User ID missing", { status: 400 });
+    if (!userId || !query) {
+        return new Response("User ID or query missing", { status: 400 });
     }
 
     try {
