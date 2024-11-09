@@ -4,7 +4,8 @@ const decoder = new TextDecoder();
 export async function signJWT(payload, secret, expiresIn = '1h') {
     const header = { alg: "HS256", typ: "JWT" };
     const base64Header = btoa(JSON.stringify(header));
-    const base64Payload = btoa(JSON.stringify({ ...payload, exp: Date.now() + parseExpiry(expiresIn) }));
+
+    const base64Payload = btoa(JSON.stringify({ ...payload, exp: Math.floor(Date.now() / 1000) + Math.floor(parseExpiry(expiresIn) / 1000) }));
     const unsignedToken = `${base64Header}.${base64Payload}`;
 
     const signature = await crypto.subtle.sign(
@@ -40,7 +41,8 @@ export async function verifyJWT(token, secret) {
     }
 
     const decodedPayload = JSON.parse(atob(payload));
-    if (decodedPayload.exp && Date.now() > decodedPayload.exp) {
+    
+    if (decodedPayload.exp && Math.floor(Date.now() / 1000) > decodedPayload.exp) {
         console.error("Token has expired");
         return null;
     }
