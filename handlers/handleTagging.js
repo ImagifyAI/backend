@@ -7,7 +7,7 @@ export async function handleTagging(imageData, env) {
             const base64Image = `data:image/jpeg;base64,${Buffer.from(buffer).toString('base64')}`;
 
             const response = await env.AI.run(modelId, {
-                image: [base64Image],  
+                image: base64Image,  
                 stream: false
             });
 
