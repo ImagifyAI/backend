@@ -5,7 +5,34 @@ export default async function handleUpload(request, env) {
         return setCORSHeaders(new Response("Method not allowed", { status: 405 }));
     }
 
-    const { userId, imageData } = await request.json();
+    let userId, imageData;
+    
+    try {
+        const contentType = request.headers.get("content-type") || "";
+        
+        if (contentType.includes("multipart/form-data")) {
+            const formData = await request.formData();
+            userId = formData.get("userId");
+            imageData = formData.get("imageData");  
+            
+            if (typeof userId === "string") {
+                userId = parseInt(userId, 10);
+            }
+            
+            if (!imageData) {
+                throw new Error("Image data missing in the request");
+            }
+        } else {
+            // Fallback to JSON if it's not multipart
+            const jsonData = await request.json();
+            userId = jsonData.userId;
+            imageData = jsonData.imageData;
+        }
+    } catch (error) {
+        console.error("Error parsing upload request:", error);
+        return setCORSHeaders(new Response("Invalid upload request", { status: 400 }));
+    }
+
     const timestamp = Date.now();
     const filename = `${userId}_${timestamp}.jpg`;
 
