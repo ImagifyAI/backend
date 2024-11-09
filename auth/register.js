@@ -2,12 +2,12 @@ import { hashPassword } from "../utils/password.js";
 
 export default async function handleRegister(request, env) {
     if (request.method !== 'POST') {
-        return setCORSHeaders(new Response("Method not allowed", { status: 405 }));
+        return new Response("Method not allowed", { status: 405 });
     }
 
     const { email, password } = await request.json();
     if (!email || !password) {
-        return setCORSHeaders(new Response("Email and password are required", { status: 400 }));
+        return new Response("Email and password are required", { status: 400 });
     }
 
     const { hash, salt } = await hashPassword(password);
@@ -18,10 +18,10 @@ export default async function handleRegister(request, env) {
         ).bind(email, hash, salt).run();
     } catch (error) {
         console.error("Registration error:", error);
-        return setCORSHeaders(new Response("Email already registered", { status: 409 }));
+        return new Response("Email already registered", { status: 409 });
     }
 
-    return setCORSHeaders(new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
-    }));
+    });
 }
