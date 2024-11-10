@@ -1,11 +1,28 @@
 import { hashPassword } from "../utils/password.js";
 
+async function verifyTurnstile(token, env) {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            secret: env.TURNSTILE_SECRET_KEY,
+            response: token,
+        }),
+    });
+    const data = await response.json();
+    return data.success;
+}
+
 export default async function handleRegister(request, env) {
+    const { email, password, turnstileToken } = await request.json();
+    const isHuman = await verifyTurnstile(turnstileToken, env);
+    if (!isHuman) {
+        return new Response("Turnstile verification failed", { status: 403 });
+    }
     if (request.method !== 'POST') {
         return new Response("Method not allowed", { status: 405 });
     }
 
-    const { email, password } = await request.json();
     if (!email || !password) {
         return new Response("Email and password are required", { status: 400 });
     }
