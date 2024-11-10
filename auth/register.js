@@ -1,19 +1,38 @@
 async function verifyTurnstileToken(token, ip, secret) {
+    console.log("Verifying turnstile token:", {
+        tokenLength: token?.length,
+        ip,
+        secretLength: secret?.length
+    });
+
     try {
-        const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+        const body = {
+            secret: secret,
+            response: token,
+            remoteip: ip
+        };
+
+        console.log("Sending verification request to:", verifyUrl);
+
+        const response = await fetch(verifyUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                secret: secret,
-                response: token,
-                remoteip: ip
-            })
+            body: JSON.stringify(body)
         });
 
         const data = await response.json();
-        console.log("Turnstile verification response:", data);
+        console.log("Turnstile verification full response:", data);
+
+        if (!data.success) {
+            console.error("Turnstile verification failed:", {
+                errorCodes: data["error-codes"],
+                messages: data.messages
+            });
+        }
+
         return data.success;
     } catch (error) {
         console.error("Turnstile verification error:", error);
@@ -28,19 +47,19 @@ export default async function handleRegister(request, env) {
 
     try {
         const { email, password, turnstileToken } = await request.json();
-        
+
         if (!email || !password) {
-            return new Response("Email and password are required", { 
+            return new Response("Email and password are required", {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
         if (!turnstileToken) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: "Turnstile verification required" 
-            }), { 
+            return new Response(JSON.stringify({
+                success: false,
+                error: "Turnstile verification required"
+            }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
@@ -48,16 +67,16 @@ export default async function handleRegister(request, env) {
 
         const clientIp = request.headers.get('cf-connecting-ip');
         const isValid = await verifyTurnstileToken(
-            turnstileToken, 
-            clientIp, 
+            turnstileToken,
+            clientIp,
             env.TURNSTILE_SECRET_KEY
         );
-        
+
         if (!isValid) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: "Invalid security challenge response" 
-            }), { 
+            return new Response(JSON.stringify({
+                success: false,
+                error: "Invalid security challenge response"
+            }), {
                 status: 403,
                 headers: { "Content-Type": "application/json" }
             });
@@ -74,21 +93,21 @@ export default async function handleRegister(request, env) {
         });
     } catch (error) {
         console.error("Registration error:", error);
-        
+
         if (error.message?.includes("UNIQUE constraint failed")) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: "Email already registered" 
-            }), { 
+            return new Response(JSON.stringify({
+                success: false,
+                error: "Email already registered"
+            }), {
                 status: 409,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: "Registration failed" 
-        }), { 
+        return new Response(JSON.stringify({
+            success: false,
+            error: "Registration failed"
+        }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
         });
