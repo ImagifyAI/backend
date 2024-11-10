@@ -6,10 +6,26 @@ export default async function handleLogin(request, env) {
         return new Response("Method not allowed", { status: 405 });
     }
 
-    const { email, password } = await request.json();
-    if (!email || !password) {
-        return new Response(JSON.stringify({ success: false, error: "Email and password are required" }), {
+    const { email, password, turnstileToken } = await request.json();
+    if (!email || !password || !turnstileToken) {
+        return new Response(JSON.stringify({ 
+            success: false, 
+            error: "Email, password, and turnstile verification are required" 
+        }), {
             status: 400,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    const clientIp = request.headers.get('cf-connecting-ip');
+    const isValid = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET_KEY);
+    
+    if (!isValid) {
+        return new Response(JSON.stringify({ 
+            success: false, 
+            error: "Invalid turnstile token" 
+        }), {
+            status: 403,
             headers: { "Content-Type": "application/json" },
         });
     }
@@ -19,7 +35,10 @@ export default async function handleLogin(request, env) {
     ).bind(email).first();
 
     if (!result || !(await verifyPassword(password, result.password, result.salt))) {
-        return new Response(JSON.stringify({ success: false, error: "Invalid email or password" }), {
+        return new Response(JSON.stringify({ 
+            success: false, 
+            error: "Invalid email or password" 
+        }), {
             status: 401,
             headers: { "Content-Type": "application/json" },
         });
