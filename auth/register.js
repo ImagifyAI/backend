@@ -10,6 +10,7 @@ async function verifyTurnstile(token, env) {
         }),
     });
     const data = await response.json();
+    console.log("Cloudflare Verification Response:", data);
     return data.success;
 }
 
