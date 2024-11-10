@@ -1,13 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 import { handleAuth } from "../auth/authMiddleware.js";
 import handleRegister from "../auth/register.js";
 import handleLogin from "../auth/login.js";
@@ -41,6 +31,29 @@ function handleOptions(request) {
     return new Response(null, { headers });
 }
 
+async function verifyTurnstileToken(token, ip, secret) {
+    try {
+        const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                secret: secret,
+                response: token,
+                remoteip: ip
+            })
+        });
+
+        const data = await response.json();
+        console.log("Turnstile verification response:", data);
+        return data.success;
+    } catch (error) {
+        console.error("Turnstile verification error:", error);
+        return false;
+    }
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -65,11 +78,98 @@ export default {
 
             switch (url.pathname) {
                 case "/api/register":
-                    response = await handleRegister(request, env);
+                    {
+                        const clientIp = request.headers.get('cf-connecting-ip');
+                        const body = await request.json();
+                        
+                        if (!body.turnstileToken) {
+                            response = new Response(JSON.stringify({ 
+                                success: false, 
+                                error: "Security verification required" 
+                            }), { 
+                                status: 400,
+                                headers: { "Content-Type": "application/json" }
+                            });
+                            break;
+                        }
+
+                        const isValid = await verifyTurnstileToken(
+                            body.turnstileToken, 
+                            clientIp, 
+                            env.TURNSTILE_SECRET_KEY
+                        );
+
+                        if (!isValid) {
+                            response = new Response(JSON.stringify({ 
+                                success: false, 
+                                error: "Invalid security verification" 
+                            }), { 
+                                status: 403,
+                                headers: { "Content-Type": "application/json" }
+                            });
+                            break;
+                        }
+
+                        const newRequest = new Request(request.url, {
+                            method: request.method,
+                            headers: request.headers,
+                            body: JSON.stringify({
+                                email: body.email,
+                                password: body.password
+                            })
+                        });
+                        
+                        response = await handleRegister(newRequest, env);
+                    }
                     break;
+
                 case "/api/login":
-                    response = await handleLogin(request, env);
+                    {
+                        const clientIp = request.headers.get('cf-connecting-ip');
+                        const body = await request.json();
+                        
+                        // Verify Turnstile first
+                        if (!body.turnstileToken) {
+                            response = new Response(JSON.stringify({ 
+                                success: false, 
+                                error: "Security verification required" 
+                            }), { 
+                                status: 400,
+                                headers: { "Content-Type": "application/json" }
+                            });
+                            break;
+                        }
+
+                        const isValid = await verifyTurnstileToken(
+                            body.turnstileToken, 
+                            clientIp, 
+                            env.TURNSTILE_SECRET_KEY
+                        );
+
+                        if (!isValid) {
+                            response = new Response(JSON.stringify({ 
+                                success: false, 
+                                error: "Invalid security verification" 
+                            }), { 
+                                status: 403,
+                                headers: { "Content-Type": "application/json" }
+                            });
+                            break;
+                        }
+
+                        const newRequest = new Request(request.url, {
+                            method: request.method,
+                            headers: request.headers,
+                            body: JSON.stringify({
+                                email: body.email,
+                                password: body.password
+                            })
+                        });
+                        
+                        response = await handleLogin(newRequest, env);
+                    }
                     break;
+
                 case "/api/upload":
                     const authResultUpload = await handleAuth(request, env);
                     if (!authResultUpload.isAuthenticated) {
@@ -107,7 +207,13 @@ export default {
             }
         } catch (error) {
             console.error("Unhandled error:", error);
-            response = new Response("Internal Server Error", { status: 500 });
+            response = new Response(JSON.stringify({ 
+                success: false, 
+                error: "Internal Server Error" 
+            }), { 
+                status: 500,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         return setCORSHeaders(response);
